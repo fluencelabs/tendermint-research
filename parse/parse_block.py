@@ -59,6 +59,7 @@ firsttx = 1e20
 lasttx = 0
 firstblock = 1e20
 lastblock = 0
+maxblocksize = 0
 
 txstat = []
 for height in range(minheight, maxheight + 1):
@@ -72,6 +73,7 @@ for height in range(minheight, maxheight + 1):
 		firstblock = min(firstblock, blocktime)
 		lastblock = max(lastblock, blocktime)
 		blockcount += 1
+		maxblocksize = max(maxblocksize, numtxs)
 
 	print height, numtxs, blocktimetxt
 	txs = data["result"]["block"]["data"]["txs"]
@@ -84,6 +86,8 @@ for height in range(minheight, maxheight + 1):
 			hostnamehash = txhex[32:64]
 			
 			txtime = uvarint(txbytes[32:40]) / 1e6
+			if txtime < 1e9:
+				txtime *= 1e6 # legacy support
 			latency = blocktime - txtime
 
 			accsize += len(txbytes)
@@ -124,7 +128,7 @@ for i in range(steps + 1):
 		curindex += 1
 	stepstat.append(cursum)
 import matplotlib.pyplot as plt
-plt.figure(figsize=(15, 5))
+f = plt.figure(figsize=(15, 5))
 plt.plot([i * (lastblock - firsttx) / steps for i in range(steps + 1)], stepstat)
 plt.title("Duration: %.1f s, Tx size: %s, Tx send rate: %.3f tx/s = %s/s, Tx throughput: %.3f tx/s = %s/s" %
 	(lasttx - firsttx, formatbytes(accsize / txcount), 
@@ -132,4 +136,6 @@ plt.title("Duration: %.1f s, Tx size: %s, Tx send rate: %.3f tx/s = %s/s, Tx thr
 	txcount / (lastblock - firsttx), formatbytes(accsize / (lastblock - firsttx))))
 plt.xlabel("seconds from first tx")
 plt.ylabel("txs in backlog")
+f.savefig("tdmnt-stat-%d-%d-%d-%.1f-%.0f-%.0f.pdf" % 
+	(minheight, maxheight, maxblocksize, lasttx - firsttx, accsize / txcount, txcount / (lasttx - firsttx)), bbox_inches='tight')
 plt.show(block=True)
