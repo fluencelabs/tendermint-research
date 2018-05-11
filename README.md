@@ -13,6 +13,7 @@ This guide is intended for Fluence-specific Tendermint exploration. It is based 
 Launch required number of instance on EC2. Perform those actions during Configuration step:
 * Allow incoming TCP traffic to `46656` and `46657` ports
 * Add `Environment` tag with `testnet-servers` value
+
 Obtain deployment scripts from GitHub:
 * Clone https://github.com/fluencelabs/tools repository
 * Checkout `benchmark_improvements` branch
