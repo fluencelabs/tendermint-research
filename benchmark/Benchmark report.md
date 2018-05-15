@@ -58,6 +58,7 @@ On the next test network topology is unchanged but 1 EU node is turn off forcibl
 TODO
 
 Overview
+
 | Instance type | Total nodes | Failed nodes | Configuration | Peak throughput (per second) |
 | --- | --- | --- | --- | --- |
 | t2.micro | 4 | 0 | 3EU + 1SA | 1229 = 154kB |
