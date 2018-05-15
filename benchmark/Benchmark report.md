@@ -7,6 +7,7 @@ A series of tests was evaluated against several Tendermint clusters with various
 * Every test is 20-second stream of random transactions broadcasted from one of cluster nodes
 * Transactions are broadcasted via some fixed number of consequent Tendermint RPC calls every 100 milliseconds
 * With perspective of `kvstore` application every transaction is random key-value pair added to key-value database
+* Timeout parameters for Tendermint were increased 4 times from default. It prevents Tendermint from possible multiple consensus retrying because of large network delays in order to get more stable results, but in real environment these timeouts should be smaller and thus results may be subject to these consensus retrying
 
 ## Benchmark highlights
 * The main limitation of throughput is transaction data rate. Peak throughput value is near 200 kB/s, reaching in 4-node local (single datacenter) cluster with large transaction sizes (4 kB and more)
@@ -120,10 +121,19 @@ A series of tests with varying transaction size (from 64 B to 4 kB) was made. Al
 This parameter (`max_block_size_txs`) is important and its optimal value depends on particular workload.
 For over-saturated (rate > throughput) workloads this value defines how Tendermint empties transaction backlog after the end of over-saturated period.
 Below are transaction backlog charts for constant over-saturated flow of 3000 tx/s and different `max_block_size_txs` values:, `1000`, `3000`, `5000`, `8000`.
+
+#### Maximum 1000 transaction per block
 ![4-node t2.micro max 1000](M1000.png)
+
+#### Maximum 3000 transaction per block
 ![4-node t2.micro max 3000](M3000.png)
+
+#### Maximum 5000 transaction per block
 ![4-node t2.micro max 5000](M5000.png)
+
+#### Maximum 8000 transaction per block
 ![4-node t2.micro max 8000](M8000.png)
+
 Such observations allow to state that empirically it should be near twice the average transaction rate. Larger value increase amounts of data to transfer over network which may lead to huge delays close to configured timeout values.
 
 For under-saturated workloads reducing this parameter may theoretically prevent Tendermint from waiting for next transaction and potentially reduce latency. But it would cause degradation if workload begin to grow after some moment.
