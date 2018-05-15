@@ -7,7 +7,7 @@ A series of tests was evaluated against several Tendermint clusters with various
 * Every test is 20-second stream of random transactions broadcasted from one of cluster nodes
 * Transactions are broadcasted via some fixed number of consequent Tendermint RPC calls every 100 milliseconds
 * With perspective of `kvstore` application every transaction is random key-value pair added to key-value database
-* Timeout parameters for Tendermint were increased 4 times from default. It prevents Tendermint from possible multiple consensus retrying because of large network delays in order to get more stable results, but in real environment these timeouts should be smaller and thus results may be subject to these consensus retrying
+* Timeout parameters for Tendermint were increased 4 times from default. It prevents Tendermint from possible multiple consensus block attempts because of large network delays in order to get more stable results, but in real environment these timeouts should be smaller and thus results may be subject to these multiple attempts
 
 ## Benchmark highlights
 * The main limitation of throughput is transaction data rate. Peak throughput value is near 200 kB/s, reaching in 4-node local (single datacenter) cluster with large transaction sizes (4 kB and more)
