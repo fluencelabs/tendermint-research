@@ -28,8 +28,7 @@ A series of tests was evaluated against several Tendermint clusters with various
   * Typically it should be near twice the average transaction rate
   * It should be large enough for high throughput-oriented workloads
   * It shouldn't be very large (more than 10000) if service may sometimes be overloaded – larger value may increase tx backlog processing after peak load
-  * Reducing this value may help to optimize latency for low throughput workloads
-  * The more powerful nodes' CPUs are the smaller this value should be
+  * Reducing this value may potentially help to optimize latency for low throughput workloads
 
 ## Benchmark details
 Several types of tests were taken in order to evaluate the dependency between maximal throughput / minimal latency and various factors:
@@ -79,8 +78,7 @@ Next, let's observe performance boost when moving from t2.micro to t2.medium: `7
 Increasing the number of nodes to 79 significantly reduced the performance. One the most stable runs gives `90 tx/s`.
 ![79-node geo-distributed t2.medium 100/s](N79mgeo-100.png)
 
-Overview
-
+#### Overview
 | Instance type | Total nodes | Failed nodes | Configuration | Peak throughput (per second) |
 | --- | --- | --- | --- | --- |
 | t2.micro | 4 | 0 | 3EU + 1SA | 1229 = 154kB |
@@ -99,12 +97,17 @@ Overview
 
 ### Transaction size tests
 A series of tests with varying transaction size (from 64 B to 4 kB) was made. All of them used 4-node t2.micro single datacenter cluster (like 2nd line test from above table). The transaction througput decreases as expected while transaction size grows, byte throughput increases however with peak value of `173 kB/s` for 4 kB transactions.
+
+#### 64-byte transactions
 ![4-node 64 B t2.micro](S64.png)
+
+#### 256-byte transactions
 ![4-node 256 B t2.micro](S256.png)
+
+#### 4-kbyte transactions
 ![4-node 4 kB t2.micro](S4096.png)
 
-Overview
-
+#### Overview
 | Transaction size | tx/s | kB/s |
 | --- | --- | --- |
 | 64 | 1782 | 111 |
@@ -114,4 +117,13 @@ Overview
 | 4096 | 173 | 173 |
 
 ### Maximum transactions per block tests
-TODO
+This parameter (`max_block_size_txs`) is important and its optimal value depends on particular workload.
+For over-saturated (rate > throughput) workloads this value defines how Tendermint empties transaction backlog after the end of over-saturated period.
+Below are transaction backlog charts for constant over-saturated flow of 3000 tx/s and different `max_block_size_txs` values:, `1000`, `3000`, `5000`, `8000`.
+![4-node t2.micro max 1000](M1000.png)
+![4-node t2.micro max 3000](M3000.png)
+![4-node t2.micro max 5000](M5000.png)
+![4-node t2.micro max 8000](M8000.png)
+Such observations allow to state that empirically it should be near twice the average transaction rate. Larger value increase amounts of data to transfer over network which may lead to huge delays close to configured timeout values.
+
+For under-saturated workloads reducing this parameter may theoretically prevent Tendermint from waiting for next transaction and potentially reduce latency. But it would cause degradation if workload begin to grow after some moment.
