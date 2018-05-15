@@ -58,21 +58,21 @@ On the next test network topology is unchanged but 1 EU node is turn off forcibl
 TODO
 
 Overview
-Instance type | Total nodes | Failed nodes | Configuration | Peak throughput (per second)
---- | --- | --- | --- | ---
-t2.micro | 4 | 0 | 3EU + 1SA | 1229 = 154kB
-t2.micro | 4 | 0 | 4EU | 1170 = 146kB
-t2.micro | 4 | 0 | 1EU+1SA+1US+1AP | 1125 = 140kB
-t2.micro | 4 | 1 | 4EU | 1000 = 125kB
-t2.micro | 4 | 1EU | 3EU+1SA | 877 = 110kB
-t2.micro | 4 | 1 | 1EU+1SA+1US+1AP | 815 = 100kB
-t2.micro | 16 | 0 | 4EU+4SA+4US+4AP | 638 = 80kB
-t2.micro | 16 | 3 | 4EU+4SA+4US+4AP | 528 = 66kB
-t2.medium | 4 | 0 | 4EU | 1300 = 160kB
-t2.medium | 16 | 0 | 16EU | 880 = 110kB
-t2.medium | 16 | 0 | 4EU+4SA+4US+4AP | 758 = 95kB
-t2.medium | 40 | 0 | 20EU+20US | 168 = 21kB
-t2.medium | 79 | 0 | 20EU+19SA+20US+20AP | 90 = 11kB
+| Instance type | Total nodes | Failed nodes | Configuration | Peak throughput (per second) |
+| --- | --- | --- | --- | --- |
+| t2.micro | 4 | 0 | 3EU + 1SA | 1229 = 154kB |
+| t2.micro | 4 | 0 | 4EU | 1170 = 146kB |
+| t2.micro | 4 | 0 | 1EU+1SA+1US+1AP | 1125 = 140kB |
+| t2.micro | 4 | 1 | 4EU | 1000 = 125kB |
+| t2.micro | 4 | 1EU | 3EU+1SA | 877 = 110kB |
+| t2.micro | 4 | 1 | 1EU+1SA+1US+1AP | 815 = 100kB |
+| t2.micro | 16 | 0 | 4EU+4SA+4US+4AP | 638 = 80kB |
+| t2.micro | 16 | 3 | 4EU+4SA+4US+4AP | 528 = 66kB |
+| t2.medium | 4 | 0 | 4EU | 1300 = 160kB |
+| t2.medium | 16 | 0 | 16EU | 880 = 110kB |
+| t2.medium | 16 | 0 | 4EU+4SA+4US+4AP | 758 = 95kB |
+| t2.medium | 40 | 0 | 20EU+20US | 168 = 21kB |
+| t2.medium | 79 | 0 | 20EU+19SA+20US+20AP | 90 = 11kB |
 
 ### Transaction size tests
 TODO
