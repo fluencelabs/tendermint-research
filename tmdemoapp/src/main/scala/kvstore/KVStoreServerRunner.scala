@@ -31,24 +31,43 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
   }
 
   override def receivedDeliverTx(req: RequestDeliverTx): ResponseDeliverTx = {
-    val keyValuePattern = "(.*)=(.*)".r
-    val rangeKeyValuePattern = "(.*)=(.*)".r
+    val keyValuePattern = "(.+)=(.*)".r
+    val rangeKeyValuePattern = "(\\d+)-(\\d+):(.+)=(.*)".r
 
     val tx = req.getTx.toStringUtf8
     tx match {
+      case rangeKeyValuePattern(rangeStartStr, rangeEndStr, keyPattern, valuePattern) =>
+        val rangeStart = rangeStartStr.toInt
+        val rangeEnd = rangeEndStr.toInt
+        System.out.println(s"DeliverTx: got range add from=$rangeStart to=$rangeEnd keyPattern=$keyPattern valuePattern=$valuePattern")
+        for (index <- rangeStart until rangeEnd) {
+          var key = keyPattern
+          var value = valuePattern
+          for (hexPosition <- 0 to 6) {
+            val target = "@" + hexPosition
+            val replacement = ((index >> hexPosition * 4) & 0xf).toHexString
+            key = key.replace(target, replacement)
+            value = value.replace(target, replacement)
+          }
+          addKeyValue(key, value)
+        }
+        ResponseDeliverTx.newBuilder.setCode(CodeType.OK).build
       case keyValuePattern(key, value) =>
-        System.out.println("got key=" + key + " value=" + value)
-        stageRoot = stageRoot.addValue(key, value)
+        addKeyValue(key, value)
         ResponseDeliverTx.newBuilder.setCode(CodeType.OK).build
       case key =>
-        System.out.println("got key/value=" + key)
-        stageRoot = stageRoot.addValue(key, key)
+        addKeyValue(key, key)
         ResponseDeliverTx.newBuilder.setCode(CodeType.OK).build
     }
   }
 
+  private def addKeyValue(key: String, value: String): Unit = {
+    System.out.println(s"DeliverTx: added key=$key value=$value")
+    stageRoot = stageRoot.addValue(key, value)
+  }
+
   override def requestCheckTx(req: RequestCheckTx): ResponseCheckTx = {
-    System.out.println("SENDING OK")
+    System.out.println("CheckTx: SENDING OK")
     ResponseCheckTx.newBuilder.setCode(CodeType.OK).build
   }
 
