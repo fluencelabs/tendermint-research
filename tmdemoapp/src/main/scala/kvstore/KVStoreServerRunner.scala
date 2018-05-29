@@ -8,14 +8,20 @@ import com.github.jtendermint.jabci.socket.TSocket
 import com.github.jtendermint.jabci.types.{ResponseCheckTx, _}
 import com.google.protobuf.ByteString
 
+import scala.collection.mutable.ArrayBuffer
+
 object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQuery {
 
   def main(args: Array[String]): Unit = {
     KVStoreServerRunner.start()
   }
 
-  private val storage: util.ArrayList[Node] = new util.ArrayList[Node]()
-  private var stageRoot: Node = Node.emptyNode
+  private val storage: ArrayBuffer[Node] = new ArrayBuffer[Node]()
+
+  private var consensusRoot: Node = Node.emptyNode
+
+  @volatile
+  private var mempoolRoot: Node = Node.emptyNode
 
   def start(): Unit = {
     System.out.println("starting KVStore")
@@ -26,8 +32,9 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
     val t = new Thread(() => socket.start(46658))
     t.setName("KVStore server Main Thread")
     t.start()
-    while (true)
+    while (true) {
       Thread.sleep(1000L)
+    }
   }
 
   override def receivedDeliverTx(req: RequestDeliverTx): ResponseDeliverTx = {
@@ -36,6 +43,9 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
 
     val tx = req.getTx.toStringUtf8
     tx match {
+      case "BAD_DELIVER" =>
+        System.out.println(s"DeliverTx: BAD_DELIVER")
+        ResponseDeliverTx.newBuilder.setCode(CodeType.BAD).setLog("BAD_DELIVER").build
       case rangeKeyValuePattern(rangeStartStr, rangeEndStr, keyPattern, valuePattern) =>
         val rangeStart = rangeStartStr.toInt
         val rangeEnd = rangeEndStr.toInt
@@ -62,29 +72,39 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
   }
 
   private def addKeyValue(key: String, value: String): Unit = {
+    consensusRoot = consensusRoot.addValue(key, value)
     System.out.println(s"DeliverTx: added key=$key value=$value")
-    stageRoot = stageRoot.addValue(key, value)
   }
 
   override def requestCheckTx(req: RequestCheckTx): ResponseCheckTx = {
-    System.out.println("CheckTx: SENDING OK")
-    ResponseCheckTx.newBuilder.setCode(CodeType.OK).build
+    // check mempoolRoot
+
+    val tx = req.getTx.toStringUtf8
+    if (tx == "BAD_CHECK") {
+      System.out.println(s"CheckTx: $tx BAD")
+      ResponseCheckTx.newBuilder.setCode(CodeType.BAD).setLog("BAD_CHECK").build
+    } else {
+      System.out.println(s"CheckTx: $tx OK")
+      ResponseCheckTx.newBuilder.setCode(CodeType.OK).build
+    }
   }
 
   override def requestCommit(requestCommit: RequestCommit): ResponseCommit = {
-    stageRoot = stageRoot.merkleize()
+    consensusRoot = consensusRoot.merkleize()
 
     val buf = ByteBuffer.allocate(32)
-    buf.put(stageRoot.merkleHash.get)
+    buf.put(consensusRoot.merkleHash.get)
     buf.rewind
 
-    storage.add(stageRoot)
+    storage.append(consensusRoot)
+    mempoolRoot = consensusRoot
+
     ResponseCommit.newBuilder.setData(ByteString.copyFrom(buf)).build
   }
 
   override def requestQuery(req: RequestQuery): ResponseQuery = {
-    val height = if (req.getHeight != 0) req.getHeight.toInt - 1 else storage.size() - 1
-    val root = storage.get(height)
+    val height = if (req.getHeight != 0) req.getHeight.toInt - 1 else storage.size - 1
+    val root = storage(height)
     val getPattern = "get:(.*)".r
     val lsPattern = "ls:(.*)".r
 
