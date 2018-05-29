@@ -1,7 +1,6 @@
 package kvstore
 
 import java.nio.ByteBuffer
-import java.util
 
 import com.github.jtendermint.jabci.api._
 import com.github.jtendermint.jabci.socket.TSocket
@@ -72,8 +71,13 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
   }
 
   private def addKeyValue(key: String, value: String): Unit = {
-    consensusRoot = consensusRoot.addValue(key, value)
-    System.out.println(s"DeliverTx: added key=$key value=$value")
+    var effectiveValue = value;
+    val commentPartIndex = value.indexOf("###")
+    if (commentPartIndex >= 0) {
+      effectiveValue = value.substring(0, commentPartIndex)
+    }
+    consensusRoot = consensusRoot.addValue(key, effectiveValue)
+    System.out.println(s"DeliverTx: added key=$key value=$effectiveValue")
   }
 
   override def requestCheckTx(req: RequestCheckTx): ResponseCheckTx = {
