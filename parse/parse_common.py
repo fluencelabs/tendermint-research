@@ -34,10 +34,13 @@ def readjson(url):
 	response = urllib.urlopen("http://" + url)
 	return json.loads(response.read())
 
-def getmaxheight(tmaddress):
+def getsyncinfo(tmaddress):
 	status = readjson(tmaddress + "/status")["result"]
 	if "sync_info" in status: # compatibility
-		return status["sync_info"]["latest_block_height"]
+		return status["sync_info"]
 	else:
-		return status["latest_block_height"]
+		return status
+
+def getmaxheight(tmaddress):
+	return getsyncinfo(tmaddress)["latest_block_height"]
 

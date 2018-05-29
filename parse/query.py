@@ -1,15 +1,5 @@
 import sys, urllib, json, datetime, time
-
-def readjson(url):
-	response = urllib.urlopen("http://" + url)
-	return json.loads(response.read())
-
-def getsyncinfo():
-	status = readjson(tmaddress + "/status")["result"]
-	if "sync_info" in status: # compatibility
-		return status["sync_info"]
-	else:
-		return status
+from parse_common import readjson, getsyncinfo
 
 if len(sys.argv) < 3:
 	print "usage: python query.py host:port command arg"
@@ -29,7 +19,7 @@ if command == 'tx':
 
 
 elif command == 'query':
-	syncinfo = getsyncinfo()
+	syncinfo = getsyncinfo(tmaddress)
 	height = syncinfo["latest_block_height"]
 	apphash = syncinfo["latest_app_hash"]
 	print "HEIGHT:", height
