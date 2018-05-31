@@ -37,14 +37,49 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
   }
 
   override def receivedDeliverTx(req: RequestDeliverTx): ResponseDeliverTx = {
+    val tx = req.getTx.toStringUtf8
+    val txPayload = tx.split("###")(0)
+
+    val unaryOpPattern = "(.+)=(.+):(.*)".r
+    val binaryOpPattern = "(.+)=(.+):(.*),(.*)".r
     val keyValuePattern = "(.+)=(.*)".r
     val rangeKeyValuePattern = "(\\d+)-(\\d+):(.+)=(.*)".r
 
-    val tx = req.getTx.toStringUtf8
-    tx match {
+    txPayload match {
       case "BAD_DELIVER" =>
         System.out.println(s"DeliverTx: BAD_DELIVER")
         ResponseDeliverTx.newBuilder.setCode(CodeType.BAD).setLog("BAD_DELIVER").build
+      case unaryOpPattern(key, op, arg) =>
+        op match {
+          case "get" =>
+            val value = consensusRoot.getValue(arg).get
+            addKeyValue(key, value)
+            ResponseDeliverTx.newBuilder.setCode(CodeType.OK).setInfo(value).build
+          case "increment" =>
+            val value = consensusRoot.getValue(arg).get
+            val newValue = (value.toLong + 1).toString
+            addKeyValue(arg, newValue)
+            addKeyValue(key, value)
+            ResponseDeliverTx.newBuilder.setCode(CodeType.OK).setInfo(value).build
+          case "factorial" =>
+            val argValue = consensusRoot.getValue(arg).get.toLong
+            val factorial = (1L to argValue).product.toString
+            addKeyValue(key, factorial)
+            ResponseDeliverTx.newBuilder.setCode(CodeType.OK).setInfo(factorial).build
+          case _ =>
+            ResponseDeliverTx.newBuilder.setCode(CodeType.BAD).setLog("Unknown unary op").build
+        }
+      case binaryOpPattern(key, op, arg1, arg2) =>
+        op match {
+          case "sum" =>
+            val arg1Value = consensusRoot.getValue(arg1).get.toLong
+            val arg2Value = consensusRoot.getValue(arg2).get.toLong
+            val sum = (arg1Value + arg2Value).toString
+            addKeyValue(key, sum)
+            ResponseDeliverTx.newBuilder.setCode(CodeType.OK).setInfo(sum).build
+          case _ =>
+            ResponseDeliverTx.newBuilder.setCode(CodeType.BAD).setLog("Unknown binary op").build
+        }
       case rangeKeyValuePattern(rangeStartStr, rangeEndStr, keyPattern, valuePattern) =>
         val rangeStart = rangeStartStr.toInt
         val rangeEnd = rangeEndStr.toInt
@@ -63,21 +98,16 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
         ResponseDeliverTx.newBuilder.setCode(CodeType.OK).build
       case keyValuePattern(key, value) =>
         addKeyValue(key, value)
-        ResponseDeliverTx.newBuilder.setCode(CodeType.OK).build
+        ResponseDeliverTx.newBuilder.setCode(CodeType.OK).setInfo(value).build
       case key =>
         addKeyValue(key, key)
-        ResponseDeliverTx.newBuilder.setCode(CodeType.OK).build
+        ResponseDeliverTx.newBuilder.setCode(CodeType.OK).setInfo(key).build
     }
   }
 
   private def addKeyValue(key: String, value: String): Unit = {
-    var effectiveValue = value;
-    val commentPartIndex = value.indexOf("###")
-    if (commentPartIndex >= 0) {
-      effectiveValue = value.substring(0, commentPartIndex)
-    }
-    consensusRoot = consensusRoot.addValue(key, effectiveValue)
-    System.out.println(s"DeliverTx: added key=$key value=$effectiveValue")
+    consensusRoot = consensusRoot.addValue(key, value)
+    System.out.println(s"DeliverTx: added key=$key value=$value")
   }
 
   override def requestCheckTx(req: RequestCheckTx): ResponseCheckTx = {
@@ -116,7 +146,7 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
     query match {
       case getPattern(key) =>
         val result = root.getValue(key)
-        val proof = if (!req.getProve) "" else twoLevelMerkleListToString(root.getProof(key))
+        val proof = if (result.isDefined && req.getProve) twoLevelMerkleListToString(root.getProof(key)) else ""
 
         ResponseQuery.newBuilder.setCode(CodeType.OK)
           .setValue(ByteString.copyFromUtf8(result.getOrElse("")))
@@ -124,7 +154,7 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
           .build
       case lsPattern(key) =>
         val result = root.listChildren(key)
-        val proof = if (!req.getProve) "" else twoLevelMerkleListToString(root.getProof(key))
+        val proof = if (result.isDefined && req.getProve) twoLevelMerkleListToString(root.getProof(key)) else ""
 
         ResponseQuery.newBuilder.setCode(CodeType.OK)
           .setValue(ByteString.copyFromUtf8(result.map(x => x.mkString(" ")).getOrElse("")))

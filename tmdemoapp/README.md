@@ -1,5 +1,5 @@
 # Tendermint Demo ABCI KVStore on Scala
-This is demo application implementing Tendermint ABCI interface. It models in-memory key-value string storage. Key here are hierarchical, `/`-separated. This key hierarchy is *merkleized*, so every node stores Merkle hash of its associated value (if present) and its children.
+This is demo application implementing Tendermint ABCI interface. It models in-memory key-value string storage. Key here are hierarchical, `/`-separated. This key hierarchy is *merkelized*, so every node stores Merkle hash of its associated value (if present) and its children.
 The application is compatible with `Tendermint v0.19.x` and uses `com.github.jtendermint.jabci` for Java ABCI definitions.
 
 ## Installation and running
@@ -17,6 +17,8 @@ And launch Tendermint:
 
 tendermint node --consensus.create_empty_blocks=false
 ```
+
+In case Tendermint launched first, it would periodically try to connect the app until the app started. 
 
 ## Sending transactions
 For working with transactions and queries use Python scripts in [`parse`](https://github.com/fluencelabs/tendermint_research/tree/master/parse) directory.
@@ -42,7 +44,7 @@ Also see `tmdemoapp` source code for special transaction cases:
 
 In case of massive broadcasting of multiple transactions via `broadcast_tx_sync` or `broadcast_tx_async` RPC, the app would not calculate Merkle hashes during `DeliverTx` processing. Instead it would modify key tree and mark changed paths by clearing Merkle hashes until ABCI `Commit` processing. On `Commit` the app would recalculate Merkle hash along changed paths only. Finally the app would return the resulting root Merkle hash to Tendermint and this hash would be stored as `app_hash` for corresponding height in the blockchain.
 
-Note that described merkleized structure is just for demo purposes and not self-balanced, it would remain efficient only until it the user transactions keep it relatively balanced. Something like [Patricia tree](https://github.com/ethereum/wiki/wiki/Patricia-Tree) should be more appropriate to achieve self-balancing.
+Note that described merkelized structure is just for demo purposes and not self-balanced, it would remain efficient only until it the user transactions keep it relatively balanced. Something like [Patricia tree](https://github.com/ethereum/wiki/wiki/Patricia-Tree) should be more appropriate to achieve self-balancing.
 
 ## Making queries
 Use `get:` queries to read values from KVStore:
