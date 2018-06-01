@@ -7,6 +7,8 @@ case object BINARY_BASED_MERKLE_MERGE extends MerkleMergeRule
 case object HEX_BASED_MERKLE_MERGE extends MerkleMergeRule
 
 object MerkleUtil {
+  val merkleSize: Int = 32
+
   def singleMerkle(data: String): MerkleHash = new SHA3.Digest256().digest(data.getBytes)
 
   def mergeMerkle(parts: List[MerkleHash], mergeRule: MerkleMergeRule): MerkleHash =

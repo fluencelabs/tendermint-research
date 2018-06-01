@@ -21,6 +21,7 @@ for height in range(minheight, maxheight + 1):
 	
 	numtxs = data["num_txs"]
 	totaltxs = data["total_txs"]
+	app_hash = data["app_hash"]
 
 	blocktimetxt = data["time"]
 	blocktime = parseutc(blocktimetxt)
@@ -38,7 +39,7 @@ for height in range(minheight, maxheight + 1):
 					txsummary += "%30s " % txstr
 			if len(txs) > 5:
 				txsummary += "..."
-		print "%5s: %s %7d %7d %s" % (height, datetime.datetime.fromtimestamp(blocktime), numtxs, totaltxs, txsummary)
+		print "%5s: %s %7d %7d %s... %s" % (height, datetime.datetime.fromtimestamp(blocktime), numtxs, totaltxs, app_hash[0:6], txsummary)
 	else:
 		if lastempty < height - 1:
 			print "..."

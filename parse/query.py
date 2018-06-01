@@ -25,15 +25,20 @@ if command in {CMD_TX, CMD_TX_VERIFY}:
 		print "ERROR :", response["error"]["data"]
 	else:
 		height = response["result"]["height"]
-		info = response["result"].get("deliver_tx", {}).get("info")
-		print "OK"
 		print "HEIGHT:", height
-		print "INFO:  ", info or "EMPTY"
-		if command == CMD_TX_VERIFY and info is not None:
-			query_key = arg.split("=")[0]
-			query_response = abci_query(tmaddress, height, "get:" + query_key)
-			print "VERIFY:", query_response[0] or "EMPTY"
-			print "PROOF :", query_response[1] or "NO_PROOF"
+		if response["result"].get("deliver_tx", {}).get("code", "0") != "0":
+			log = response["result"].get("deliver_tx", {}).get("log")
+			print "BAD"
+			print "LOG:   ", log or "EMPTY"
+		else:
+			info = response["result"].get("deliver_tx", {}).get("info")
+			print "OK"
+			print "INFO:  ", info or "EMPTY"
+			if command == CMD_TX_VERIFY and info is not None:
+				query_key = arg.split("=")[0]
+				query_response = abci_query(tmaddress, height, "get:" + query_key)
+				print "VERIFY:", query_response[0] or "EMPTY"
+				print "PROOF :", query_response[1] or "NO_PROOF"
 
 
 elif command == CMD_QUERY:

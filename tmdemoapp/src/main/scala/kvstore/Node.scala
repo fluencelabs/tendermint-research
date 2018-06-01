@@ -1,14 +1,15 @@
 package kvstore
 
 import kvstore.MerkleUtil._
+
 import scala.collection.immutable.HashMap
 
 case class Node(children: NodeStorage, value: Option[String], merkleHash: Option[MerkleHash]) {
-  def merkleize(): Node =
+  def merkelize(): Node =
     if (merkleHash.isDefined)
       this
     else {
-      val newChildren = children.mapValues(x => x.merkleize())
+      val newChildren = children.mapValues(x => x.merkelize())
       val withNewChildren = Node(newChildren, value, None)
       Node(newChildren, value, Some(mergeMerkle(withNewChildren.merkleItems(), HEX_BASED_MERKLE_MERGE)))
     }
@@ -25,7 +26,37 @@ case class Node(children: NodeStorage, value: Option[String], merkleHash: Option
     }
   }
 
-  def addValue(key: String, value: String): Node = {
+  def add(key: String, value: String): Node = {
+    val rangeKeyValuePattern = "(\\d+)-(\\d+):(.+)".r
+
+    key match {
+      case rangeKeyValuePattern(rangeStartStr, rangeEndStr, keyPattern) =>
+        val rangeStart = rangeStartStr.toInt
+        val rangeEnd = rangeEndStr.toInt
+        System.out.println(s"setting range from=$rangeStart to=$rangeEnd keyPattern=$keyPattern valuePattern=$value")
+
+        var currentNode = this
+        for (index <- rangeStart until rangeEnd) {
+          var key = keyPattern
+          var effectiveValue = value
+          for (hexPosition <- 0 to 6) {
+            val target = "@" + hexPosition
+            val replacement = ((index >> hexPosition * 4) & 0xf).toHexString
+            key = key.replace(target, replacement)
+            effectiveValue = effectiveValue.replace(target, replacement)
+          }
+          System.out.println(s"setting key=$key value=$effectiveValue")
+          currentNode = currentNode.addValue(key, effectiveValue)
+        }
+
+        currentNode
+      case _ =>
+        System.out.println(s"setting key=$key value=$value")
+        addValue(key, value)
+    }
+  }
+
+  private def addValue(key: String, value: String): Node = {
     if (key.isEmpty)
       Node(children, Some(value), None)
     else {
