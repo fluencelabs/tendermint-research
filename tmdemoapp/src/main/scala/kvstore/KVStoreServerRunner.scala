@@ -48,18 +48,18 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
       case "BAD_DELIVER" => Left("BAD_DELIVER")
       case binaryOpPattern(key, op, arg1, arg2) =>
         op match {
-          case "sum" => SumOperation(arg1, arg2).run(consensusRoot, key)
+          case "sum" => SumOperation(arg1, arg2)(consensusRoot, key)
           case _ => Left("Unknown binary op")
         }
       case unaryOpPattern(key, op, arg) =>
         op match {
-          case "get" => GetOperation(arg).run(consensusRoot, key)
-          case "increment" => IncrementOperation(arg).run(consensusRoot, key)
-          case "factorial" => FactorialOperation(arg).run(consensusRoot, key)
+          case "get" => GetOperation(arg)(consensusRoot, key)
+          case "increment" => IncrementOperation(arg)(consensusRoot, key)
+          case "factorial" => FactorialOperation(arg)(consensusRoot, key)
           case _ => Left("Unknown unary op")
         }
-      case plainValuePattern(key, value) => SetValueOperation(value).run(consensusRoot, key)
-      case key => SetValueOperation(key).run(consensusRoot, key)
+      case plainValuePattern(key, value) => SetValueOperation(value)(consensusRoot, key)
+      case key => SetValueOperation(key)(consensusRoot, key)
     }
 
     result match {

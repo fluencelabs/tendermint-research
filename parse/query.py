@@ -25,14 +25,15 @@ if command in {CMD_TX, CMD_TX_VERIFY}:
 		print "ERROR :", response["error"]["data"]
 	else:
 		height = response["result"]["height"]
-		print "HEIGHT:", height
 		if response["result"].get("deliver_tx", {}).get("code", "0") != "0":
 			log = response["result"].get("deliver_tx", {}).get("log")
 			print "BAD"
+			print "HEIGHT:", height
 			print "LOG:   ", log or "EMPTY"
 		else:
 			info = response["result"].get("deliver_tx", {}).get("info")
 			print "OK"
+			print "HEIGHT:", height
 			print "INFO:  ", info or "EMPTY"
 			if command == CMD_TX_VERIFY and info is not None:
 				query_key = arg.split("=")[0]

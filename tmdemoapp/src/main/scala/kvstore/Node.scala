@@ -3,6 +3,7 @@ package kvstore
 import kvstore.MerkleUtil._
 
 import scala.collection.immutable.HashMap
+import scala.util.Try
 
 case class Node(children: NodeStorage, value: Option[String], merkleHash: Option[MerkleHash]) {
   def merkelize(): Node =
@@ -27,7 +28,7 @@ case class Node(children: NodeStorage, value: Option[String], merkleHash: Option
   }
 
   def add(key: String, value: String): Node = {
-    val rangeKeyValuePattern = "(\\d+)-(\\d+):(.+)".r
+    val rangeKeyValuePattern = "(\\d{1,8})-(\\d{1,8}):(.+)".r
 
     key match {
       case rangeKeyValuePattern(rangeStartStr, rangeEndStr, keyPattern) =>
@@ -73,6 +74,8 @@ case class Node(children: NodeStorage, value: Option[String], merkleHash: Option
       children.get(next).flatMap(_.getValue(rest))
     }
   }
+
+  def getLongValue(key: String): Option[Long] = getValue(key).flatMap(x => Try(x.toLong).toOption)
 
   def listChildren(key: String): Option[List[String]] = {
     if (key.isEmpty)
