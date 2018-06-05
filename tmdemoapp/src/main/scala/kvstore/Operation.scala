@@ -1,7 +1,5 @@
 package kvstore
 
-import scala.util.Try
-
 trait Operation {
   def apply(root: Node, targetKey: String): Either[String, (Node, String)]
 }
