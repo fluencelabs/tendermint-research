@@ -27,6 +27,8 @@ case class Node(children: NodeStorage, value: Option[String], merkleHash: Option
     }
   }
 
+  def longValue: Option[Long] = value.flatMap(x => Try(x.toLong).toOption)
+
   def add(key: String, value: String): Node = {
     val rangeKeyValuePattern = "(\\d{1,8})-(\\d{1,8}):(.+)".r
 
@@ -66,16 +68,18 @@ case class Node(children: NodeStorage, value: Option[String], merkleHash: Option
     }
   }
 
-  def getValue(key: String): Option[String] = {
+  def getNode(key: String): Option[Node] = {
     if (key.isEmpty)
-      value
+      Some(this)
     else {
       val (next, rest) = splitPath(key)
-      children.get(next).flatMap(_.getValue(rest))
+      children.get(next).flatMap(_.getNode(rest))
     }
   }
 
-  def getLongValue(key: String): Option[Long] = getValue(key).flatMap(x => Try(x.toLong).toOption)
+  def getValue(key: String): Option[String] = getNode(key).flatMap(_.value)
+
+  def getLongValue(key: String): Option[Long] = getNode(key).flatMap(_.longValue)
 
   def listChildren(key: String): Option[List[String]] = {
     if (key.isEmpty)

@@ -69,18 +69,25 @@ python query.py localhost:46657 tx a/d=increment:a/c###again
 INFO:   11
 ```
 
-`sum` transaction would sum the values of references keys and assign the result to the target key.
+`sum` transaction would sum the values of references keys and assign the result to the target key:
 ```bash
 python query.py localhost:46657 tx a/e=sum:a/c,a/d
 ...
 INFO:   23
 ```
 
-`factorial` transaction would calculate the factorial of the referenced key value.
+`factorial` transaction would calculate the factorial of the referenced key value:
 ```bash
 python query.py localhost:46657 tx a/f=factorial:a/b
 ...
 INFO:   3628800
+```
+
+`hiersum` transaction would calculate the sum of non-empty values for the referenced key and its descendants by hierarchy (all non-empty values should be integer):
+```bash
+python query.py localhost:46657 tx c/asum=hiersum:a
+...
+INFO:   3628856
 ```
 
 Transactions are not applied in case of wrong arguments (non-integer values to `increment`, `sum`, `factorial` or wrong number of arguments). Transactions with a target key like `get`, `increment`, `sum`, `factorial` return the new value of the target key as `INFO`, but this values cannot be trusted if the serving node is not reliable. To verify the returned `INFO` one needs to `query` the target key explicitly.
@@ -98,6 +105,7 @@ RESULT: 23
 ```
 Use `ls:` queries to read key hierarchy:
 ```bash
+python query.py localhost:46657 query ls:a
 ...
 RESULT: e f b c d
 ```
@@ -107,11 +115,18 @@ These commands implemented by requesting `abci_query` RPC (which immediately pro
 
 The app stores historical changes and handle queries for any particular height. The requested height (the latest by default) and the corresponding `app_hash` also returned for `query` Python script. This combination (result, Merkle proof and `app_hash` from the blockchain) verifies the correctness of the result (because this `app_hash` could only appear in the blockchain as a result of Tendermint quorum consistent decision).
 
-## Heavyweight transactions
+## Heavy-weight transactions
 Applying simple transactions with different target keys makes the sizes of the blockchain (which contains transaction list) and the app state relatively close to each other. If target keys are often repeated, the blockchain size would become much larger than the app state size. To demonstrate the opposite situating (the app state much larger than the blockchain) *range* transactions are supported:
 ```bash
 python query.py localhost:46657 tx 0-200:b/@1/@0=1
 ...
 INFO:   1
 ```
-Here `0-200:` prefix means that this transaction should consist of 200 subsequent transactions, each of them obtained by applying a template `b/@1/@0=1` to a counter from 0 to 199. `@0` and `@1` are substitution markers for the two lowermost hexadecimal digits of the counter. I. e. this transaction would create 200 keys: `b/0/0`, `b/0/1`, ..., `b/c/7` and put `1` to each of them.
+Here `0-200:` prefix means that this transaction should consist of 200 subsequent key-value mappings, each of them obtained by applying a template `b/@1/@0=1` to a counter from 0 to 199, inclusive. `@0` and `@1` are substitution markers for the two lowermost hexadecimal digits of the counter. I. e. this transaction would create 200 keys: `b/0/0`, `b/0/1`, ..., `b/c/7` and put `1` to each of them.
+
+We can check the result by querying the hierarchical sum of `b` children:
+```bash
+python query.py localhost:46657 tx c/bsum=hiersum:b
+...
+INFO:   200
+```

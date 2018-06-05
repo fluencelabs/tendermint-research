@@ -56,6 +56,7 @@ object KVStoreServerRunner extends IDeliverTx with ICheckTx with ICommit with IQ
           case "get" => GetOperation(arg)(consensusRoot, key)
           case "increment" => IncrementOperation(arg)(consensusRoot, key)
           case "factorial" => FactorialOperation(arg)(consensusRoot, key)
+          case "hiersum" => HierarchicalSumOperation(arg)(consensusRoot, key)
           case _ => Left("Unknown unary op")
         }
       case plainValuePattern(key, value) => SetValueOperation(value)(consensusRoot, key)

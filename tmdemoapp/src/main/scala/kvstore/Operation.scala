@@ -41,6 +41,23 @@ case class FactorialOperation(arg: String) extends Operation {
   }
 }
 
+case class HierarchicalSumOperation(arg: String) extends Operation {
+  override def apply(root: Node, targetKey: String): Either[String, (Node, String)] = {
+    System.out.println(s"process hierarchical sum arg=$arg")
+    root.getNode(arg)
+      .flatMap(calculate)
+      .map(_.toString)
+      .toRight("Wrong argument")
+      .map(sum => (root.add(targetKey, sum), sum))
+  }
+
+  private def calculate(node: Node): Option[Long] = {
+    val nodeValue = if (node.value.isDefined) node.longValue else Some(0L)
+    val childrenValues = node.children.values.foldLeft(Option(0L))((acc, node) => acc.flatMap(x => calculate(node).map(_ + x)))
+    nodeValue.flatMap(x => childrenValues.map(x + _))
+  }
+}
+
 case class SumOperation(arg1: String, arg2: String) extends Operation {
   override def apply(root: Node, targetKey: String): Either[String, (Node, String)] = {
     System.out.println(s"process sum arg1=$arg1 arg2=$arg2")
